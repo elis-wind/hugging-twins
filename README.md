@@ -11,16 +11,27 @@ This repo now ships with a lightweight dashboard that blends Samsung Health expo
 ### Quick start
 
 1. Create a local environement:
+   
    `python -m venv venv`
+   
 2. Activate the local env (contains numpy/pandas):
+   
    `source venv/bin/activate`
+
 3. Install the requirements:
+   
    `pip install -r requirements.txt`
+
 4. Place the Samsung health data into `data/` folder
+   
 5. Generate the summary JSON from the Samsung exports in `data/`:
+   
    `python health_dashboard.py`
+
 6.  Serve the repo (so the dashboard can fetch the JSON):
+   
    `python -m http.server 8000`
+
 7. Open the dashboard at `http://localhost:8000/dashboard.html`.
 
 ### Dashboard flow
