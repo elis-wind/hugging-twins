@@ -84,7 +84,7 @@
       <h3>Actions</h3>
       <div class="actions">
         <div>
-          <button id="run-pipeline">Run Stress Analysis</button>
+          <button id="run-pipeline">Run Stress Correlation Analysis</button>
           <div class="small">Uses Samsung data in <code>data/</code> via API.</div>
           <div class="error" id="pipeline-error"></div>
         </div>
@@ -104,15 +104,15 @@
     <div class="card">
       <h3>Results</h3>
       <div class="summary" id="pipeline-summary-scores" style="margin-top:10px;">
-        <div class="pill"><div class="label">Stress Analysis</div><div class="value">Awaiting…</div></div>
+        <div class="pill"><div class="label">Stress correlation analysis</div><div class="value">Awaiting…</div></div>
       </div>
       <div class="summary" id="pipeline-summary-metrics"></div>
       <div class="block" id="pipeline-explain-block">
-        <h4>Main stressor explanation</h4>
+        <h4>Main stress correlation explanation</h4>
         <p id="pipeline-explain-text">Awaiting…</p>
       </div>
       <div class="block">
-        <h4>Behavioral insights for main stressor</h4>
+        <h4>Behavioral insights for main stress correlation</h4>
         <p id="behavior-list">Awaiting…</p>
       </div>
       <div class="block" id="genai-explain-block">
@@ -157,7 +157,7 @@
     document.getElementById('run-pipeline').addEventListener('click', async () => {
       const payload = { source: 'samsung', data_dir: 'data' };
       pipelineError.textContent = '';
-      setPill(pipelineSummaryScores, [{ label: 'Stress Analysis', value: 'Loading...' }]);
+      setPill(pipelineSummaryScores, [{ label: 'Stress correlation analysis', value: 'Loading...' }]);
       pipelineExplainText.textContent = 'Loading...';
       try {
         const data = await postJSON('/compute-stress-pattern', payload);
