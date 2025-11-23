@@ -1,45 +1,69 @@
-# Hugging Twins
+# Stress Atlas by Hugging Twins
 
 Digital Twin Monitoring for Connected Devices
 
 <img src="images/logo.png" alt="Digital Twin illustration" width="400" />
 
-## Health Twin Dashboard
+## Stress Atlas Dashboard
 
 This repo now ships with a lightweight dashboard that blends Samsung Health exports with a short questionnaire to estimate biological age, show current health state, analyze trends, and project a 10-year outlook.
 
-### Quick start
+## Stress Atlas Pipeline (Samsung Health)
 
-1. Create a local environement:
+```
+Samsung Health (CSV)
+        ↓
+Data Harmonization Layer
+        ↓
+Feature Extraction (HRV, RHR, Sleep, Respiration, Activity)
+        ↓
+-------------------------------------
+|  Stress Atlas Intelligence Engine |
+-------------------------------------
+        ↓
+(A) Stress Pattern Classifier  →  Stress Cause (5-class)
+(B) Behavioral Pattern Agent   →  Longitudinal insights
+(C) GenAI Explanation Layer    →  Human-readable insights
+        ↓
+Frontend / App / API consumer
+```
 
-   `python -m venv venv`
+Three intelligence layers: deterministic + ML hybrid, longitudinal pattern extraction, and GenAI interpretation (NetMind).
 
-2. Activate the local env (contains numpy/pandas):
+### Stress pipeline quickstart
 
-   `source venv/bin/activate`
+1. Create a local environment: `python -m venv venv`
+2. Activate the local env: `source venv/bin/activate`
+3. Install deps: `pip install -r requirements.txt`
+4. Add your NetMind key to `.env` (copy `.env.example`): `NETMIND_APY_KEY=...`
+5. Run the pipeline: `python main.py`
 
-3. Install the requirements:
+Outputs a JSON payload with engineered features, 5-class stress scores, and an optional GenAI explanation if `NETMIND_APY_KEY` is set.
 
-   `pip install -r requirements.txt`
+### How the stress engine works
 
-4. Place the Samsung health data into `data/` folder
+- **Harmonization** (`src/harmonization.py`): Samsung CSVs are cleaned and resampled.
+  - Resting HR: hourly series from `tracker.heart_rate`.
+  - Sleep: nightly duration from `sleep_combined`.
+  - Steps/activity, respiration, HRV (if available) get similar treatment.
+- **Feature extraction** (`src/features.py`): rolling baselines and deltas.
+  - `rhr_mean`, `rhr_elevated` use 24h resting-HR baselines.
+  - `sleep_avg`, `sleep_deficit`, `sleep_regular` use 7-day nightly patterns.
+  - `hrv_drop_pct`, `steps_std`, `stress_index_proxy` combine HRV, HR, sleep, and activity.
+  - These features feed both the classifier and dashboard metrics.
+- **Stress pattern classifier** (`src/stress_engine.py`): hybrid rules.
+  - Rules map feature combos to five causes: physiological, cognitive/mental, recovery deficit, circadian disruption, lifestyle-driven.
+  - Scores are normalized, blended with ML priors, and the max label is the predicted cause.
+  - `health_dashboard.py` separately computes trend stats for the UI (steps, sleep, resting HR, stress score, weight).
 
-5. Generate the summary JSON from the Samsung exports in `data/`:
+### Running backend + frontend together
 
-   `python health_dashboard.py`
+Backend (FastAPI):
 
-6.  Serve the repo (so the dashboard can fetch the JSON):
-
-   `python -m http.server 8000`
-
-7. Open the dashboard at `http://localhost:8000/dashboard.html`
-
-<img src="images/dashboard.png" alt="Dashboard illustration" width="1000" />
-
-### Dashboard flow
-
-1. Fill the profile card (age, height, weight if you want to override the scale reading, smoking, alcohol, activity, stress).
-2. Click **Run Analysis** to compute biological age from the questionnaire + Samsung data.
-3. Review current state, trends (steps, sleep, resting HR, stress, weight), and the 10-year projection.
-
-The data pipeline is implemented in `health_dashboard.py`; the UI lives in `dashboard.html` and expects the generated `data/health_summary.json`.
+1. `uvicorn api:app --reload --port 8001`
+2. API endpoints:
+   - `POST /compute-stress-pattern`
+   - `POST /compute-behavioral-insights`
+   - `POST /explain-metrics`
+   - `GET /user-dashboard`
+3. UI console served at `http://127.0.0.1:8001/ui`.
