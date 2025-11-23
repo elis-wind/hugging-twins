@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from main import run_pipeline
-from src.genai import generate_explanation, explain_metrics
+from src.analytics.genai import generate_explanation, explain_metrics
 
 
 app = FastAPI(title="Stress Intelligence API", version="0.1.0")
