@@ -61,7 +61,12 @@ def explain_metrics(features: Dict[str, float]) -> str:
 
     prompt = (
         "You are a health data summarizer. Given raw numeric metrics (e.g., resting heart rate, sleep averages), "
-        "produce a concise, human-readable summary in 2-3 sentences. Mention notable highs/lows and what they may suggest about recovery, stress, or sleep quality.\n"
+        "produce a concise, human-readable summary in 2-3 sentences. Mention the metric calculations.\n"
+        "rhr_mean: mean of the hourly resting heart rate."
+        "rhr_elevated: 90th percentile of the resting HR delta above its 24-hour rolling baseline."
+        "sleep_avg: average nightly sleep hours over the entire dataset ."
+        "sleep_deficit: positive mean of (baseline_7d – nightly sleep)."
+        "sleep_regular: standard deviation of nightly sleep hours"
         f"Metrics: {features}\n"
     )
     try:

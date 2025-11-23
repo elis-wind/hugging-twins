@@ -62,12 +62,4 @@ def compute_features(signals: Dict[str, pd.DataFrame]) -> FeatureSet:
         feats["steps_mean"] = float(steps["value"].mean())
         feats["steps_std"] = float(steps["value"].std())
 
-    # Derived stress index proxy
-    feats["stress_index_proxy"] = float(
-        0.4 * (100 - feats.get("hrv_baseline_mean", 0))
-        + 0.3 * feats.get("rhr_elevated", 0)
-        + 0.2 * feats.get("sleep_deficit", 0)
-        + 0.1 * feats.get("steps_std", 0)
-    )
-
     return FeatureSet(features=feats, derived_series=series)
