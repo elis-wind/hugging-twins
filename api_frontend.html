@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stress Intelligence Console</title>
+  <style>
+    :root {
+      --bg: #070d1c;
+      --card: #0f1a33;
+      --accent: #67e8f9;
+      --accent-2: #60a5fa;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --border: rgba(255,255,255,0.08);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 24px;
+      font-family: "Inter", system-ui, -apple-system, sans-serif;
+      background: radial-gradient(circle at 10% 10%, rgba(103,232,249,0.08), transparent 42%), var(--bg);
+      color: var(--text);
+    }
+    h1 { margin: 0 0 6px; letter-spacing: -0.5px; }
+    p { margin: 0 0 16px; color: var(--muted); }
+    .layout { display: grid; grid-template-columns: 380px 1fr; gap: 16px; }
+    @media (max-width: 960px) { .layout { grid-template-columns: 1fr; } }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      box-shadow: 0 12px 36px rgba(0,0,0,0.28);
+    }
+    button {
+      padding: 12px 14px;
+      border: none;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: #0b1224;
+      font-weight: 700;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 6px;
+    }
+    .small { font-size: 12px; color: var(--muted); }
+    .actions { display: grid; gap: 12px; }
+    .summary {
+      display: flex;
+      gap: 8px;
+      margin: 10px 0 0;
+      flex-wrap: wrap;
+    }
+    .pill {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px;
+      min-width: 120px;
+      flex: 1 1 140px;
+    }
+    .pill .label { font-size: 12px; color: var(--muted); }
+    .pill .value { font-size: 16px; font-weight: 500; margin-top: 4px; }
+    .block {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px;
+      margin-top: 10px;
+    }
+    .block h4 { margin: 0 0 6px; font-size: 13px; color: var(--muted); }
+    .block p { margin: 0; color: var(--text); line-height: 1.5; }
+    .list { margin: 6px 0 0; padding-left: 16px; color: var(--text); }
+    .error { color: #fca5a5; font-size: 13px; margin-top: 8px; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <h1>Stress Intelligence Console</h1>
+  <p>Compute stress insights</p>
+
+  <div class="layout">
+    <div class="card">
+      <h3>Actions</h3>
+      <div class="actions">
+        <div>
+          <button id="run-pipeline">Run Stress Analysis</button>
+          <div class="small">Uses Samsung data in <code>data/</code> via API.</div>
+          <div class="error" id="pipeline-error"></div>
+        </div>
+        <div>
+          <button id="run-behavior">Compute Behavioral Insights</button>
+          <div class="small">Longitudinal patterns from the same data.</div>
+          <div class="error" id="behavior-error"></div>
+        </div>
+        <div>
+          <button id="run-explain">Explain Metrics</button>
+          <div class="small">Summarizes current metrics (RHR, sleep, etc.).</div>
+          <div class="error" id="explain-error"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Results</h3>
+      <div class="summary" id="pipeline-summary-scores" style="margin-top:10px;">
+        <div class="pill"><div class="label">Stress Analysis</div><div class="value">Awaiting…</div></div>
+      </div>
+      <div class="summary" id="pipeline-summary-metrics"></div>
+      <div class="block" id="pipeline-explain-block">
+        <h4>Main stressor explanation</h4>
+        <p id="pipeline-explain-text">Awaiting…</p>
+      </div>
+      <div class="block">
+        <h4>Behavioral insights for main stressor</h4>
+        <p id="behavior-list">Awaiting…</p>
+      </div>
+      <div class="block" id="genai-explain-block">
+        <h4>Metrics explanation</h4>
+        <p id="genai-explain-text">Awaiting…</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const base = window.location.origin;
+
+    async function postJSON(path, body) {
+      const res = await fetch(base + path, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+      return res.json();
+    }
+
+    const pipelineSummaryScores = document.getElementById('pipeline-summary-scores');
+    const pipelineSummaryMetrics = document.getElementById('pipeline-summary-metrics');
+    const pipelineError = document.getElementById('pipeline-error');
+    const behaviorList = document.getElementById('behavior-list');
+    const behaviorError = document.getElementById('behavior-error');
+    const pipelineExplainText = document.getElementById('pipeline-explain-text');
+    const genaiExplainText = document.getElementById('genai-explain-text');
+    const explainError = document.getElementById('explain-error');
+    let lastStress = null;
+    let lastFeatures = null;
+
+    function setPill(container, items) {
+      container.innerHTML = items.map(({ label, value }) => `
+        <div class="pill">
+          <div class="label">${label}</div>
+          <div class="value">${value}</div>
+        </div>`).join('');
+    }
+
+    document.getElementById('run-pipeline').addEventListener('click', async () => {
+      const payload = { source: 'samsung', data_dir: 'data' };
+      pipelineError.textContent = '';
+      setPill(pipelineSummaryScores, [{ label: 'Stress Analysis', value: 'Loading...' }]);
+      pipelineExplainText.textContent = 'Loading...';
+      try {
+        const data = await postJSON('/compute-stress-pattern', payload);
+        const stress = data.stress || {};
+        const features = data.features || {};
+        lastStress = stress;
+        lastFeatures = features;
+
+        const scores = stress.scores ? Object.entries(stress.scores) : [];
+        scores.sort((a,b)=>b[1]-a[1]);
+        const scorePills = scores.map(([label,val])=>({
+          label,
+          value: `${(val*100).toFixed(1)}%${label===stress.label?' ★':''}`
+        }));
+
+        const metricPills = [
+          { label: 'RHR mean', value: features.rhr_mean ? features.rhr_mean.toFixed(1) : '—' },
+          { label: 'RHR elevated', value: features.rhr_elevated ? features.rhr_elevated.toFixed(1) : '—' },
+          { label: 'Sleep avg', value: features.sleep_avg ? features.sleep_avg.toFixed(1) + ' h' : '—' },
+          { label: 'Sleep deficit', value: features.sleep_deficit ? features.sleep_deficit.toFixed(2) : '—' },
+          { label: 'Sleep regular', value: features.sleep_regular ? features.sleep_regular.toFixed(2) : '—' },
+        ];
+
+        // Render scores first row, metrics second row
+        setPill(pipelineSummaryScores, scorePills);
+        setPill(pipelineSummaryMetrics, metricPills);
+        pipelineExplainText.textContent = stress.explanation || '—';
+      } catch (err) {
+        pipelineError.textContent = 'Error: ' + err;
+        setPill(pipelineSummaryScores, [{ label: 'Status', value: 'Error' }]);
+        setPill(pipelineSummaryMetrics, []);
+        pipelineExplainText.textContent = '—';
+      }
+    });
+
+    document.getElementById('run-behavior').addEventListener('click', async () => {
+      const payload = { source: 'samsung', data_dir: 'data' };
+      behaviorError.textContent = '';
+      behaviorList.innerHTML = 'Loading...';
+      try {
+        const data = await postJSON('/compute-behavioral-insights', payload);
+        const arr = data.behavioral_insights || [];
+        if (!arr.length) {
+          behaviorList.innerHTML = 'No insights yet.';
+        } else {
+          behaviorList.innerHTML = arr.map(i => `<strong>${i.title}</strong>: ${i.detail}`).join('');
+        }
+      } catch (err) {
+        behaviorError.textContent = 'Error: ' + err;
+        behaviorList.innerHTML = '';
+      }
+    });
+
+    document.getElementById('run-explain').addEventListener('click', async () => {
+      explainError.textContent = '';
+      genaiExplainText.textContent = 'Loading...';
+      try {
+        const payload = { features: lastFeatures || { rhr_mean: 60, sleep_avg: 7, sleep_deficit: 0.5 } };
+        const data = await postJSON('/explain-metrics', payload);
+        genaiExplainText.textContent = data.explanation || 'No text';
+      } catch (err) {
+        explainError.textContent = 'Error: ' + err;
+        genaiExplainText.textContent = '—';
+      }
+    });
+  </script>
+</body>
+</html>
