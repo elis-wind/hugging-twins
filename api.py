@@ -73,14 +73,3 @@ def generate_genai_explanation(payload: ExplanationRequest):
 def explain_metrics_endpoint(payload: MetricsRequest):
     text = explain_metrics(payload.features)
     return {"explanation": text}
-
-
-@app.get("/user-dashboard")
-def user_dashboard(data_path: str = "data/health_summary.json"):
-    path = Path(data_path)
-    if not path.exists():
-        raise HTTPException(status_code=404, detail="health_summary.json not found. Run `python health_dashboard.py` first.")
-    try:
-        return json.loads(path.read_text(encoding="utf-8"))
-    except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Failed to read dashboard data: {exc}")
