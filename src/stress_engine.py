@@ -3,8 +3,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Dict, List, Tuple
 
-import numpy as np
-
 from .genai import generate_explanation
 
 
@@ -27,20 +25,18 @@ class StressResult:
 
 class StressEngine:
     """
-    Hybrid: rule layer + lightweight ML stub + GenAI explanation.
-    Replace `_ml_scores` with a trained model when available.
+    Rule-based stress classifier + GenAI explanation.
     """
 
     def __init__(self):
         pass
 
     def classify(self, features: Dict[str, float]) -> StressResult:
-        rule_scores = self._rule_inference(features)
-        ml_scores = self._ml_scores(features)
-        combined = {k: 0.6 * rule_scores.get(k, 0) + 0.4 * ml_scores.get(k, 0) for k in STRESS_CLASSES}
-        label, conf = self._argmax(combined)
-        explanation = generate_explanation(label, conf, features)
-        return StressResult(label=label, confidence=conf, scores=combined, explanation=explanation)
+        scores = self._rule_inference(features)
+        label, conf = self._argmax(scores)
+        explain_features = {k: v for k, v in features.items() if k != "stress_index_proxy"}
+        explanation = generate_explanation(label, conf, explain_features)
+        return StressResult(label=label, confidence=conf, scores=scores, explanation=explanation)
 
     def _rule_inference(self, f: Dict[str, float]) -> Dict[str, float]:
         scores = {k: 0.0 for k in STRESS_CLASSES}
@@ -63,13 +59,6 @@ class StressEngine:
         scores["cognitive_mental"] += (proxy > 30 and scores["physiological"] < 0.3) * 0.7
 
         return self._normalize(scores)
-
-    def _ml_scores(self, features: Dict[str, float]) -> Dict[str, float]:
-        """
-        Placeholder ML outputs (uniform priors); replace with a trained model.
-        """
-        base = {k: 1.0 for k in STRESS_CLASSES}
-        return self._normalize(base)
 
     @staticmethod
     def _normalize(scores: Dict[str, float]) -> Dict[str, float]:
