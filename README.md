@@ -1,14 +1,14 @@
-# Hugging Twins
+# Stress Atlas by Hugging Twins
 
 Digital Twin Monitoring for Connected Devices
 
 <img src="images/logo.png" alt="Digital Twin illustration" width="400" />
 
-## Health Twin Dashboard
+## Stress Atlas Dashboard
 
 This repo now ships with a lightweight dashboard that blends Samsung Health exports with a short questionnaire to estimate biological age, show current health state, analyze trends, and project a 10-year outlook.
 
-## Stress Intelligence Pipeline (Apple/Samsung Health)
+## Stress Atlas Pipeline (Samsung Health)
 
 ```
 Samsung Health (CSV)
@@ -17,9 +17,9 @@ Data Harmonization Layer
         ↓
 Feature Extraction (HRV, RHR, Sleep, Respiration, Activity)
         ↓
-------------------------------
-|  Stress Intelligence Engine |
-------------------------------
+-------------------------------------
+|  Stress Atlas Intelligence Engine |
+-------------------------------------
         ↓
 (A) Stress Pattern Classifier  →  Stress Cause (5-class)
 (B) Behavioral Pattern Agent   →  Longitudinal insights

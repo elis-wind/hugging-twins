@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Stress Intelligence Console</title>
+  <title>StressAtlas</title>
   <style>
     :root {
       --bg: #070d1c;
@@ -69,19 +69,32 @@
       padding: 10px;
       margin-top: 10px;
     }
-    .block h4 { margin: 0 0 6px; font-size: 13px; color: var(--muted); }
+    .block-header { display:flex; align-items:center; gap:8px; margin-bottom:6px; }
+    .block h4 { margin: 0; font-size: 13px; color: var(--muted); }
     .block p { margin: 0; color: var(--text); line-height: 1.5; }
+    .badge {
+      display:inline-block;
+      background: rgba(103,232,249,0.15);
+      color: var(--accent);
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(103,232,249,0.3);
+      line-height: 1.2;
+    }
     .list { margin: 6px 0 0; padding-left: 16px; color: var(--text); }
     .error { color: #fca5a5; font-size: 13px; margin-top: 8px; white-space: pre-wrap; }
   </style>
 </head>
 <body>
-  <h1>Stress Intelligence Console</h1>
-  <p>Compute stress insights</p>
+  <div style="text-align:center; margin-bottom:24px;">
+    <h1 style="margin-bottom:6px;">Stress Atlas</h1>
+    <p style="margin:0; color:var(--muted);">Not another score. A stress intelligence system</p>
+  </div>
 
   <div class="layout">
     <div class="card">
-      <h3>Actions</h3>
+      <h3>Insight Console</h3>
       <div class="actions">
         <div>
           <button id="run-pipeline">Run Stress Correlation Analysis</button>
@@ -108,7 +121,10 @@
       </div>
       <div class="summary" id="pipeline-summary-metrics"></div>
       <div class="block" id="pipeline-explain-block">
-        <h4>Main stress correlation explanation</h4>
+        <div class="block-header">
+          <h4>Main stress correlation explanation</h4>
+          <span class="badge">GenAI</span>
+        </div>
         <p id="pipeline-explain-text">Awaiting…</p>
       </div>
       <div class="block">
@@ -116,7 +132,10 @@
         <p id="behavior-list">Awaiting…</p>
       </div>
       <div class="block" id="genai-explain-block">
-        <h4>Metrics explanation</h4>
+        <div class="block-header">
+          <h4>Metrics explanation</h4>
+          <span class="badge">GenAI</span>
+        </div>
         <p id="genai-explain-text">Awaiting…</p>
       </div>
     </div>
